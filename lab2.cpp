@@ -1,69 +1,21 @@
 #include <bits/stdc++.h>
+#define vvi vector<vector<int>>
+#define pii pair<int, int>
 
 using namespace std;
 
 int dx[4] = {0, 0, 1, -1};
 int dy[4] = {1, -1, 0, 0};
+map<vvi, vvi> child_to_parent_mapping;
 
-class Grid
+void initialization(vvi &matrix, vvi &final_state)
 {
-public:
-    Grid(vector<vector<int>> inputGrid)
-    {
-        currentState = inputGrid;
-        for (int i = 0; i < 3; i++)
-        {
-            for (int j = 0; j < 3; j++)
-            {
-                if (currentState[i][j] == 0)
-                {
-                    zero_index = {i, j};
-                }
-            }
-        }
-    }
+    final_state = {
+        {1, 2, 3},
+        {4, 0, 5},
+        {6, 7, 8}};
 
-    pair<int, int> getZeroIndex()
-    {
-        return zero_index;
-    }
-
-    vector<vector<int>> getCurrentState()
-    {
-        return currentState;
-    }
-
-    vector<Grid> getNextStateList()
-    {
-        int x = zero_index.first;
-        int y = zero_index.second;
-
-        vector<Grid> nextStates;
-
-        for (int i = 0; i < 4; i++)
-        {
-            int new_x = x + dx[i];
-            int new_y = y + dy[i];
-            if (new_x >= 0 && new_x <= 2 && new_y >= 0 && new_y <= 2)
-            {
-                vector<vector<int>> nextState = currentState;
-                swap(nextState[x][y], nextState[new_x][new_y]);
-                nextStates.push_back(nextState);
-            }
-        }
-        return nextStates;
-    }
-
-private:
-    vector<vector<int>> currentState;
-    pair<int, int> zero_index;
-};
-
-int main()
-{
-
-    vector<vector<int>> matrix(3, vector<int>(3, 0));
-
+    cout << "Enter the input matrix\n";
     for (int i = 0; i < 3; i++)
     {
         for (int j = 0; j < 3; j++)
@@ -73,21 +25,148 @@ int main()
             matrix[i][j] = curr_val;
         }
     }
+}
 
-    Grid myGrid(matrix);
-    vector<Grid> nextStates = myGrid.getNextStateList();
-    for (auto presentState : nextStates)
+pii getZeroIndex(vvi currentState)
+{
+    for (int i = 0; i < 3; i++)
     {
-        vector<vector<int>> presentStateGrid = presentState.getCurrentState();
-        for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
         {
-            for (int j = 0; j < 3; j++)
+            if (currentState[i][j] == 0)
             {
-                cout << presentStateGrid[i][j] << " ";
+                return {i, j};
             }
-            cout << "\n";
+        }
+    }
+}
+
+vector<vvi> getNextStateList(vvi currentState)
+{
+    pii zero_index = getZeroIndex(currentState);
+    int x = zero_index.first;
+    int y = zero_index.second;
+
+    vector<vvi> nextStates;
+
+    for (int i = 0; i < 4; i++)
+    {
+        int new_x = x + dx[i];
+        int new_y = y + dy[i];
+        if (new_x >= 0 && new_x <= 2 && new_y >= 0 && new_y <= 2)
+        {
+            vvi nextState = currentState;
+            swap(nextState[x][y], nextState[new_x][new_y]);
+            nextStates.push_back(nextState);
+        }
+    }
+    return nextStates;
+}
+
+void print_matrix(vvi input)
+{
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            cout << input[i][j] << " ";
         }
         cout << "\n";
     }
+    cout << "\n";
+}
+
+bool bfs(vvi &matrix, vvi &final_state, set<vvi> &close_list, int &total_states_visited, int &states_on_optimal_path)
+{
+    priority_queue<pair<int, vvi>> my_queue;
+    my_queue.push({0, matrix});
+    while (!my_queue.empty())
+    {
+        vvi currentState = my_queue.top().second;
+        int states_on_path = -my_queue.top().first;
+        total_states_visited++;
+        close_list.insert(currentState);
+        my_queue.pop();
+        if (currentState == final_state)
+        {
+            states_on_optimal_path = states_on_path;
+            return true;
+        }
+        vector<vvi> nextStateList = getNextStateList(currentState);
+        for (auto nextState : nextStateList)
+        {
+            if (close_list.find(nextState) != close_list.end())
+                continue;
+            child_to_parent_mapping[nextState] = currentState;
+            my_queue.push({-(states_on_path + 1), nextState});
+        }
+    }
+    return false;
+}
+
+void output_message(bool search_successfull, int total_states_visited, int states_on_optimal_path, vector<vvi> optimalPath)
+{
+    cout << search_successfull << "\n";
+    if (!search_successfull)
+    {
+        cout << "FAIL\n";
+    }
+    else
+    {
+        cout << "PASS\n";
+        for (auto state : optimalPath)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    cout << state[i][j] << " ";
+                }
+                cout << "\n";
+            }
+            cout << "\n";
+        }
+    }
+    cout << "States on optimal path: " << states_on_optimal_path << "\n";
+    cout << "The total number of states explored: " << total_states_visited << "\n";
+}
+
+vector<vvi> getOptimalPath(vvi start_state, vvi final_state)
+{
+    vector<vvi> optimalPath;
+    vvi curr_state = final_state;
+    while (curr_state != start_state)
+    {
+        optimalPath.push_back(curr_state);
+        curr_state = child_to_parent_mapping[curr_state];
+    }
+    optimalPath.push_back(start_state);
+    reverse(optimalPath.begin(), optimalPath.end());
+    return optimalPath;
+}
+
+int main()
+{
+    vvi final_state;
+    vvi matrix(3, vector<int>(3, 0));
+    initialization(matrix, final_state); // taking user input
+
+    set<vvi> close_list;
+    set<vvi> open_list; // did not make much use because it is same as the nodes in pririrty queue? you can add the nodes as you deem apropriate
+
+    int total_states_visited = 0;
+    int states_on_optimal_path = 0;
+
+    bool success = bfs(matrix, final_state, close_list, total_states_visited, states_on_optimal_path); // main shit
+
+    cout << "done2\n";
+    vector<vvi> optimalPath;
+    if (success)
+    {
+        optimalPath = getOptimalPath(matrix, final_state);
+    }
+
+    output_message(success, total_states_visited, states_on_optimal_path, optimalPath);
+
     return 0;
 }
