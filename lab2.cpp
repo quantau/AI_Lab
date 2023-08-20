@@ -76,6 +76,48 @@ void print_matrix(vvi input)
     cout << "\n";
 }
 
+int displacedTileHeurestic(vvi &curr, vvi &target, bool account_empty_tile)
+{
+    int heurestic_value = 0;
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            if (!account_empty_tile && curr[i][j] == 0)
+                continue;
+            heurestic_value += curr[i][j] != target[i][j];
+        }
+    }
+    return heurestic_value;
+}
+
+int manhattanDistanceHeurestic(vvi &curr, vvi &target, bool account_empty_tile)
+{
+    int manhattan_distance[9][2];
+    for (int i = 0; i < 9; i++)
+    {
+        manhattan_distance[i][0] = 0;
+        manhattan_distance[i][1] = 0;
+    }
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            manhattan_distance[curr[i][j]][0] += i;
+            manhattan_distance[curr[i][j]][1] += j;
+
+            manhattan_distance[target[i][j]][0] -= i;
+            manhattan_distance[target[i][j]][1] -= j;
+        }
+    }
+    int heurestic_value = 0;
+    for (int i = 1 - account_empty_tile; i <= 8; i++)
+    {
+        heurestic_value += abs(manhattan_distance[i][0]) + abs(manhattan_distance[i][1]);
+    }
+    return heurestic_value;
+}
+
 bool bfs(vvi &matrix, vvi &final_state, set<vvi> &close_list, int &total_states_visited, int &states_on_optimal_path)
 {
     priority_queue<pair<int, vvi>> my_queue;
@@ -104,7 +146,7 @@ bool bfs(vvi &matrix, vvi &final_state, set<vvi> &close_list, int &total_states_
     return false;
 }
 
-void output_message(bool search_successfull, int total_states_visited, int states_on_optimal_path, vector<vvi> optimalPath)
+void output_message(bool search_successfull, int total_states_visited, int states_on_optimal_path, vector<vvi> optimalPath, set<vvi> close_list)
 {
     cout << search_successfull << "\n";
     if (!search_successfull)
@@ -116,16 +158,13 @@ void output_message(bool search_successfull, int total_states_visited, int state
         cout << "PASS\n";
         for (auto state : optimalPath)
         {
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    cout << state[i][j] << " ";
-                }
-                cout << "\n";
-            }
-            cout << "\n";
+            print_matrix(state);
         }
+    }
+    cout << "Following is the close list:\n";
+    for (auto state : close_list)
+    {
+        print_matrix(state);
     }
     cout << "States on optimal path: " << states_on_optimal_path << "\n";
     cout << "The total number of states explored: " << total_states_visited << "\n";
@@ -159,14 +198,13 @@ int main()
 
     bool success = bfs(matrix, final_state, close_list, total_states_visited, states_on_optimal_path); // main shit
 
-    cout << "done2\n";
     vector<vvi> optimalPath;
     if (success)
     {
         optimalPath = getOptimalPath(matrix, final_state);
     }
 
-    output_message(success, total_states_visited, states_on_optimal_path, optimalPath);
+    output_message(success, total_states_visited, states_on_optimal_path, optimalPath, close_list);
 
     return 0;
 }
