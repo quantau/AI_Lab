@@ -89,7 +89,7 @@ bool hill_climbing(vvi &start_state, vvi &final_state, int (*h)(vvi &start, vvi 
     auto t_start = std::chrono::high_resolution_clock::now();
 
     vvi curr_state = start_state;
-    int prev_cost = 1000;
+    int prev_cost = h(final_state, curr_state);
     total_states_visited++;
     while (curr_state != final_state)
     {
@@ -98,7 +98,7 @@ bool hill_climbing(vvi &start_state, vvi &final_state, int (*h)(vvi &start, vvi 
         vvi potential_next_state;
         for (auto next_state : nextStateList)
         {
-            int cost = h(curr_state, next_state);
+            int cost = h(final_state, next_state);
             if (cost < curr_min_cost)
             {
                 curr_min_cost = cost;
