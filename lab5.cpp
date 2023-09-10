@@ -88,41 +88,52 @@ bool simulated_annealing(vvi &start_state, vvi &final_state, int (*h)(vvi &start
 {
     auto t_start = std::chrono::high_resolution_clock::now();
 
-    double temperature = 1;
-    vvi curr_state = start_state;
-    int prev_cost = h(final_state, curr_state);
-    total_states_visited++;
-    int loop = 100;
-    while (loop-- && curr_state != final_state)
+    int iterations = 100;
+    for (int i = 0; i < iterations; i++)
     {
-        // cout << loop << "\n";
-        // print_state(curr_state);
-        vector<vvi> nextStateList = getNextStateList(curr_state);
+        double temperature = 1;
+        vvi curr_state = start_state;
+        int prev_cost = h(final_state, curr_state);
+        total_states_visited++;
+        while (temperature > 1e-9 && curr_state != final_state)
+        {
+            // cout << loop << "\n";
+            // print_state(curr_state);
+            vector<vvi> nextStateList = getNextStateList(curr_state);
 
-        int potentialNextStateIndex = rand() % (nextStateList.size());
-        vvi potentialNextState = nextStateList[potentialNextStateIndex];
-        // print_state(potentialNextState);
-        int curr_cost = h(final_state, potentialNextState);
-        if (curr_cost <= prev_cost)
-        {
-            child_to_parent_mapping[potentialNextState] = curr_state;
-            curr_state = potentialNextState;
-            prev_cost = curr_cost;
-            total_states_visited++;
-        }
-        else
-        {
-            double exploration_probability = exp((prev_cost - curr_cost) / temperature);
-            exploration_probability *= 100;
-            // cout << "exploration probability: " << exploration_probability << "\n";
-            if (rand() % 100 <= (int)exploration_probability)
+            int potentialNextStateIndex = rand() % (nextStateList.size());
+            vvi potentialNextState = nextStateList[potentialNextStateIndex];
+            // print_state(potentialNextState);
+            int curr_cost = h(final_state, potentialNextState);
+            if (curr_cost <= prev_cost)
             {
                 child_to_parent_mapping[potentialNextState] = curr_state;
                 curr_state = potentialNextState;
                 prev_cost = curr_cost;
                 total_states_visited++;
             }
-            temperature *= 0.99;
+            else
+            {
+                double exploration_probability = exp((prev_cost - curr_cost) * 0.1 / temperature);
+                exploration_probability *= 100;
+                // cout << "exploration probability: " << exploration_probability << "\n";
+                if (rand() % 100 <= (int)exploration_probability)
+                {
+                    child_to_parent_mapping[potentialNextState] = curr_state;
+                    curr_state = potentialNextState;
+                    prev_cost = curr_cost;
+                    total_states_visited++;
+                }
+                temperature *= 0.98;
+            }
+        }
+        if (curr_state == final_state)
+        {
+            auto t_end = std::chrono::high_resolution_clock::now();
+
+            time_taken = std::chrono::duration<float, std::milli>(t_end - t_start).count();
+
+            return true;
         }
     }
 
@@ -130,7 +141,7 @@ bool simulated_annealing(vvi &start_state, vvi &final_state, int (*h)(vvi &start
 
     time_taken = std::chrono::duration<float, std::milli>(t_end - t_start).count();
 
-    return curr_state == final_state;
+    return false;
 }
 
 void output_message(bool search_successfull, int total_states_visited, int states_on_optimal_path, vector<vvi> optimalPath, float time_taken)
