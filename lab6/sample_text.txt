@@ -1,0 +1,14 @@
+This is a sample text file. It contains multiple sentences for testing purposes.
+Each sentence is separated by a period, exclamation mark, or question mark.
+You can use this file to test the TextVectorizer class and its one-hot encoding functionality.
+Feel free to add more sentences or customize the content as needed.
+
+The quick brown fox jumps over the lazy dog.
+She sells seashells by the seashore.
+How much wood would a woodchuck chuck if a woodchuck could chuck wood?
+I have a dream that one day this nation will rise up and live out the true meaning of its creed.
+To be or not to be, that is the question.
+It was the best of times, it was the worst of times.
+Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal.
+
+That's enough sentences for testing. Have fun experimenting!
