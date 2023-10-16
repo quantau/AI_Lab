@@ -1,65 +1,87 @@
-import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 
-def Linear_Regression(x, y) :
-    # Calculate the mean of x and y
-    mean_x = sum(x) / len(x)
-    mean_y = sum(y) / len(y)
+max_val = 30
+def hypothesis(theta, X):
+    dp = np.dot(theta, X.T)
+    dp = np.clip(dp, a_min=-max_val, a_max=max_val)
+    return 1 / (1 + np.exp(-dp)) - 0.0000001
 
-    # Calculate the slope (m) and intercept (b) of the linear regression line
-    numerator = sum([(x[i] - mean_x) * (y[i] - mean_y) for i in range(len(x))])
-    denominator = sum([(x[i] - mean_x) ** 2 for i in range(len(x))])
-    slope = numerator / denominator
-    intercept = mean_y - slope * mean_x
-    return slope, intercept
+def cost(X, y, theta):
+    y1 = hypothesis(X, theta)
+    return -(1/len(X)) * np.sum(y*np.log(y1) + (1-y)*np.log(1-y1))
 
-def Plot(x, y, expected_y):
+def gradient_descent(X, y, theta, alpha, epochs):
+    m = len(X)
+    for i in range(0, epochs):
+        for j in range(0, 10):
+            theta = pd.DataFrame(theta)
+            h = hypothesis(theta.iloc[:,j], X)
+            for k in range(0, theta.shape[0]):
+                theta.iloc[k, j] -= (alpha/m) * np.sum((h-y.iloc[:, j])*X.iloc[:, k])
+            theta = pd.DataFrame(theta)
 
-    # Plot the data and regression line
-    plt.scatter(x, y, label='Data')
-    plt.plot(x, expected_y, color='red', label='Regression Line')
-    plt.xlabel('Daily')
-    plt.ylabel('Sunday')
-    plt.legend()
-    plt.title('Linear Regression')
-    plt.grid(True)
+    print("\n")
+    return theta
 
-    plt.show()
+def test(theta):
+    test_file = "mnist_test.csv"
+    df = pd.read_csv(test_file)
+    y = df['label']
+    X = df.drop(columns=['label'])
+    X.insert(0, '1x0', 1)
+    y1 = np.zeros([X.shape[0], len(y.unique())])
+    y1 = pd.DataFrame(y1)
+    for i in range(0, len(y1)):
+        y1.iloc[i, y.iloc[i]] = 1
+    output = []
+    for i in range(0, 10):
+        theta1 = pd.DataFrame(theta)
+        h = hypothesis(theta1.iloc[:,i], X)
+        output.append(h)
+    output=pd.DataFrame(output)
 
+    output = np.array(output)
+    output = output.T
+
+    accuracy = 0
+    cf_matrix = np.zeros((10, 10), dtype = int)
+    for row in range(len(y1)):
+        pred = 0
+        real_value = 0
+        for col in range(10):
+            if y1.iloc[row, col] == 1:
+                real_value = col
+            if output[row, col] > output[pred, col]:
+                pred=col
+        cf_matrix[real_value, pred] += 1
+        if real_value == pred:
+            accuracy+=1
+    print("Confusion matrix:")
+    print(cf_matrix)
+    print("\n")
+    accuracy = accuracy/len(X)
+    print("Accuracy: ",accuracy*100,"%\n")
 
 def main():
+    train_file = "mnist_train.csv"
+    df = pd.read_csv(train_file)
+    y = df['label']
+    X = df.drop(columns=['label'])
+    X.insert(0, '1x0', 1)
+    y1 = np.zeros([X.shape[0], len(y.unique())])
+    y1 = pd.DataFrame(y1)
+    for i in range(0, len(y1)):
+        y1.iloc[i, y.iloc[i]] = 1
 
-    # Define the path to your TSV file
-    tsv_file = 'newspaper_data.tsv'
+    theta = np.zeros([X.shape[1], y1.shape[1]])
+    theta = gradient_descent(X, y1, theta, 0.08, 1500)
+    test(theta)
+    print("Theta: ")
+    print(theta)
+    file_path = 'theta.csv'
+    theta.to_csv(file_path, index=False)
 
-    # Read the TSV file into a Pandas DataFrame
-    df = pd.read_csv(tsv_file, sep='\t')
-
-    x = df['Daily'].tolist()
-    y = df['Sunday'].tolist()
-
-    slope, intercept = Linear_Regression(x, y)
-
-    test_data_file = 'newspaper_data_test.tsv'
-    test_data = pd.read_csv(test_data_file, sep='\t')
-
-    x_testdata = df['Daily'].tolist()
-    x_newspapers = df['Newspaper'].tolist()
-    expected_y = [slope * xi + intercept for xi in x_testdata]
-
-    size = len(x_testdata)
-
-    print("Slope", slope)
-    print("Intercept", intercept)
-
-    not_sell_list = []
-    for i in range(size):
-        if expected_y[i] <= 1.3*x_testdata[i]:
-            not_sell_list.append(x_newspapers[i])
-            
-    print("Companies not to sell list: ", not_sell_list)
-    Plot(x,y , expected_y)
-
-
-if __name__ == "__main__":
+if __name__=="__main__":
     main()
+
